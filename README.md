@@ -68,3 +68,8 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+## Credits
+Skybox: "Quarry" (https://skfb.ly/oJSGr) by AVZ is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+Fumo: "東方 Project - V2 Reimu Hakurei Fumo (3D scan)" (https://skfb.ly/oqJsH) by Renafox is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
