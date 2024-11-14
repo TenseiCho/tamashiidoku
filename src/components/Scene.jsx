@@ -3,6 +3,11 @@ import { OrbitControls, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 
+function Skybox() {
+  const { scene } = useGLTF('/skybox/quarry.glb')
+  return <primitive object={scene} scale={[500, 500, 500]} />
+}
+
 function Model() {
   const modelRef = useRef()
   const { scene } = useGLTF('/models/reimu.glb')
@@ -30,7 +35,7 @@ export default function Scene() {
       backgroundColor: '#111'
     }}>
       <Canvas shadows>
-        <color attach="background" args={['#111']} />
+        <Skybox />
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={1.5} />
         <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff9f00" />
@@ -44,5 +49,5 @@ export default function Scene() {
   )
 }
 
-// Add this at the bottom of the file
-useGLTF.preload('/models/reimu.glb') 
+useGLTF.preload('/models/reimu.glb')
+useGLTF.preload('/skybox/quarry.glb') 
