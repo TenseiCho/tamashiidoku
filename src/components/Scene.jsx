@@ -1,12 +1,12 @@
 import { Canvas } from '@react-three/fiber'
-import { PointerLockControls, useGLTF } from '@react-three/drei'
+import { useGLTF, PointerLockControls } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 
 function Skybox() {
   const { scene } = useGLTF('/skybox/quarry.glb')
-  return <primitive object={scene} scale={[500, 500, 500]} />
+  return <primitive object={scene} scale={[1000, 1000, 1000]} />
 }
 
 function Model() {
