@@ -6,7 +6,7 @@ import * as THREE from 'three'
 
 function Skybox() {
   const { scene } = useGLTF('/skybox/quarry.glb')
-  return <primitive object={scene} scale={[1000, 1000, 1000]} />
+  return <primitive object={scene} scale={[1550, 1550, 1550]} />
 }
 
 function Model() {
@@ -21,7 +21,7 @@ function Model() {
     <primitive 
       ref={modelRef}
       object={scene}
-      scale={1}
+      scale={5}
       position={[0, 0, 0]}
     />
   )
@@ -30,6 +30,7 @@ function Model() {
 function FPSControls() {
   const moveSpeed = 0.5
   const keys = useRef({})
+  const BOUNDARY_SIZE = 220 // Slightly less than half the skybox scale (450/2 = 225)
 
   useEffect(() => {
     const handleKeyDown = (e) => keys.current[e.code] = true
@@ -60,10 +61,21 @@ function FPSControls() {
     direction.z = Number(keys.current['KeyS']) - Number(keys.current['KeyW'])
     direction.normalize()
 
+    // Store the current position before moving
+    const previousPosition = camera.position.clone()
+
+    // Apply movement
     if (keys.current['KeyW']) camera.position.add(frontVector.multiplyScalar(speed))
     if (keys.current['KeyS']) camera.position.add(frontVector.multiplyScalar(-speed))
     if (keys.current['KeyA']) camera.position.add(sideVector.multiplyScalar(-speed))
     if (keys.current['KeyD']) camera.position.add(sideVector.multiplyScalar(speed))
+
+    // Check boundaries and revert if out of bounds
+    if (Math.abs(camera.position.x) > BOUNDARY_SIZE || 
+        Math.abs(camera.position.z) > BOUNDARY_SIZE ||
+        Math.abs(camera.position.y) > BOUNDARY_SIZE) {
+      camera.position.copy(previousPosition)
+    }
   })
 
   return null
@@ -76,7 +88,7 @@ export default function Scene() {
       height: '100vh', 
       backgroundColor: '#111'
     }}>
-      <Canvas shadows>
+      <Canvas shadows camera={{ position: [0, 0.5, 10] }}>
         <Skybox />
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={1.5} />
