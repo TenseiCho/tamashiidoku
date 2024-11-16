@@ -28,9 +28,16 @@ function Model() {
 }
 
 function FPSControls() {
-  const moveSpeed = 0.5
+  const walkSpeed = 0.5
+  const sprintSpeed = 1.0
   const keys = useRef({})
-  const BOUNDARY_SIZE = 220 // Slightly less than half the skybox scale (450/2 = 225)
+  const BOUNDARY_SIZE = 220
+  
+  // Adjusted physics constants for more realistic feel
+  const GRAVITY = 0.98  // Increased gravity
+  const JUMP_FORCE = 0.65  // Reduced initial jump force
+  const velocity = useRef(0)
+  const isGrounded = useRef(true)
 
   useEffect(() => {
     const handleKeyDown = (e) => keys.current[e.code] = true
@@ -50,7 +57,24 @@ function FPSControls() {
     const direction = new THREE.Vector3()
     const frontVector = new THREE.Vector3()
     const sideVector = new THREE.Vector3()
-    const speed = moveSpeed
+    const speed = keys.current['ShiftLeft'] ? sprintSpeed : walkSpeed
+
+    // Handle jumping
+    if (keys.current['Space'] && isGrounded.current) {
+      velocity.current = JUMP_FORCE
+      isGrounded.current = false
+    }
+
+    // Apply gravity and update vertical position
+    velocity.current -= GRAVITY * 0.016  // Multiply by 0.016 to approximate delta time
+    camera.position.y += velocity.current
+
+    // Ground check and landing
+    if (camera.position.y <= 0.5) {  // 0.5 is our ground level
+      camera.position.y = 0.5
+      velocity.current = 0
+      isGrounded.current = true
+    }
 
     frontVector.setFromMatrixColumn(camera.matrix, 0)
     frontVector.crossVectors(camera.up, frontVector)
