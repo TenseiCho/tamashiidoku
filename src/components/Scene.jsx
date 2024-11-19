@@ -78,13 +78,13 @@ function Model() {
 }
 
 function FPSControls() {
-  const walkSpeed = 0.5
-  const sprintSpeed = 1.0
+  const walkSpeed = 0.01
+  const sprintSpeed = 0.03
   const keys = useRef({})
   const BOUNDARY_SIZE = 220
   
   const GRAVITY = 0.98
-  const JUMP_FORCE = 0.65
+  const JUMP_FORCE = 0.1
   const velocity = useRef(0)
   const isGrounded = useRef(true)
 
