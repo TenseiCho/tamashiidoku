@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { useGLTF, PointerLockControls } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
-import { useRef, useEffect } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { useRef, useEffect, useState } from 'react'
 import * as THREE from 'three'
 
 function CollisionBox({ position, size = [2, 5, 2], onCollide }) {
@@ -51,9 +51,19 @@ function Skybox() {
   return <primitive object={scene} scale={[1550, 1550, 1550]} />
 }
 
-function Model() {
+function Model({ onNearModel }) {
   const modelRef = useRef()
   const { scene } = useGLTF('/models/reimu.glb')
+  const { camera } = useThree()
+
+  useFrame(() => {
+    if (modelRef.current) {
+      const distance = camera.position.distanceTo(new THREE.Vector3(50, 0, 50))
+      const isNear = distance < 50
+      console.log('Distance to Reimu:', distance, 'Is Near:', isNear)
+      onNearModel(isNear)
+    }
+  })
 
   useEffect(() => {
     scene.traverse((object) => {
@@ -167,30 +177,72 @@ function FPSControls() {
   return null
 }
 
-export default function Scene() {
+export default function Scene({ onSceneSwitch }) {
+  const [isNearModel, setIsNearModel] = useState(false)
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.code === 'KeyE' && isNearModel) {
+        console.log('E pressed while near model')
+        onSceneSwitch('new')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [isNearModel, onSceneSwitch])
+
+  useEffect(() => {
+    console.log('Near model state changed:', isNearModel)
+  }, [isNearModel])
+
   return (
-    <div style={{ 
-      width: '100vw', 
-      height: '100vh', 
-      backgroundColor: '#111'
-    }}>
-      <Canvas shadows camera={{ 
-        position: [-50, -25, -50],
-        fov: 100
+    <>
+      <div style={{ 
+        width: '100vw', 
+        height: '100vh', 
+        backgroundColor: '#111'
       }}>
-        <group>
-          <Skybox />
-          <ambientLight intensity={0.3} />
-          <pointLight position={[10, 10, 10]} intensity={1.5} />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff9f00" />
-          <Model />
-          <PointerLockControls />
-          <FPSControls />
-        </group>
-      </Canvas>
-    </div>
+        {isNearModel && (
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: 'white',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            padding: '10px',
+            borderRadius: '5px',
+            zIndex: 99999,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '20px',
+            fontWeight: 'bold'
+          }}>
+            Press E to interact
+          </div>
+        )}
+        <Canvas shadows camera={{ 
+          position: [-50, -25, -50],
+          fov: 100
+        }}>
+          <group>
+            <Skybox />
+            <ambientLight intensity={0.3} />
+            <pointLight position={[10, 10, 10]} intensity={1.5} />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff9f00" />
+            <Model onNearModel={setIsNearModel} />
+            <PointerLockControls />
+            <FPSControls />
+          </group>
+        </Canvas>
+      </div>
+    </>
   )
 }
 
 useGLTF.preload('/models/reimu.glb')
-useGLTF.preload('/skybox/quarry.glb') 
+useGLTF.preload('/skybox/quarry.glb')
+
+export { FPSControls } 
