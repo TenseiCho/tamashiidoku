@@ -4,6 +4,48 @@ import { useFrame } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 
+function CollisionBox({ position, size = [2, 5, 2], onCollide }) {
+  const meshRef = useRef()
+  
+  useFrame(() => {
+    if (meshRef.current) {
+      const boundingBox = new THREE.Box3().setFromObject(meshRef.current)
+      
+      const collidables = []
+      meshRef.current.parent.traverse((object) => {
+        if (object.userData.collidable) {
+          collidables.push(object)
+        }
+      })
+      
+      collidables.forEach(object => {
+        const objectBox = new THREE.Box3().setFromObject(object)
+        if (boundingBox.intersectsBox(objectBox)) {
+          if (onCollide) {
+            onCollide({
+              type: 'object',
+              object: object,
+              position: object.position.clone()
+            })
+          }
+        }
+      })
+    }
+  })
+
+  return (
+    <mesh 
+      ref={meshRef} 
+      position={position}
+      visible={false}
+      userData={{ collidable: true }}
+    >
+      <boxGeometry args={size} />
+      <meshBasicMaterial wireframe opacity={0} transparent />
+    </mesh>
+  )
+}
+
 function Skybox() {
   const { scene } = useGLTF('/skybox/quarry.glb')
   return <primitive object={scene} scale={[1550, 1550, 1550]} />
@@ -13,17 +55,25 @@ function Model() {
   const modelRef = useRef()
   const { scene } = useGLTF('/models/reimu.glb')
 
-  useFrame((state, delta) => {
-    modelRef.current.rotation.y += delta * 0.5
-  })
+  useEffect(() => {
+    scene.traverse((object) => {
+      object.userData.collidable = true
+    })
+  }, [scene])
 
   return (
-    <primitive 
-      ref={modelRef}
-      object={scene}
-      scale={5}
-      position={[0, 0, 0]}
-    />
+    <group>
+      <primitive 
+        ref={modelRef}
+        object={scene}
+        scale={5}
+        position={[50, 0, 50]}
+      />
+      <CollisionBox 
+        position={[50, 0, 50]}
+        size={[3, 6, 3]}
+      />
+    </group>
   )
 }
 
@@ -33,9 +83,8 @@ function FPSControls() {
   const keys = useRef({})
   const BOUNDARY_SIZE = 220
   
-  // Adjusted physics constants for more realistic feel
-  const GRAVITY = 0.98  // Increased gravity
-  const JUMP_FORCE = 0.65  // Reduced initial jump force
+  const GRAVITY = 0.98
+  const JUMP_FORCE = 0.65
   const velocity = useRef(0)
   const isGrounded = useRef(true)
 
@@ -53,24 +102,25 @@ function FPSControls() {
   }, [])
 
   useFrame((state) => {
-    const { camera } = state
+    const { camera, scene } = state
+    
+    if (!camera || !scene) return
+
+    const previousPosition = camera.position.clone()
     const direction = new THREE.Vector3()
     const frontVector = new THREE.Vector3()
     const sideVector = new THREE.Vector3()
     const speed = keys.current['ShiftLeft'] ? sprintSpeed : walkSpeed
 
-    // Handle jumping
     if (keys.current['Space'] && isGrounded.current) {
       velocity.current = JUMP_FORCE
       isGrounded.current = false
     }
 
-    // Apply gravity and update vertical position
-    velocity.current -= GRAVITY * 0.016  // Multiply by 0.016 to approximate delta time
+    velocity.current -= GRAVITY * 0.016
     camera.position.y += velocity.current
 
-    // Ground check and landing
-    if (camera.position.y <= 0.5) {  // 0.5 is our ground level
+    if (camera.position.y <= 0.5) {
       camera.position.y = 0.5
       velocity.current = 0
       isGrounded.current = true
@@ -78,26 +128,38 @@ function FPSControls() {
 
     frontVector.setFromMatrixColumn(camera.matrix, 0)
     frontVector.crossVectors(camera.up, frontVector)
-
     sideVector.setFromMatrixColumn(camera.matrix, 0)
 
     direction.x = Number(keys.current['KeyD']) - Number(keys.current['KeyA'])
     direction.z = Number(keys.current['KeyS']) - Number(keys.current['KeyW'])
     direction.normalize()
 
-    // Store the current position before moving
-    const previousPosition = camera.position.clone()
-
-    // Apply movement
     if (keys.current['KeyW']) camera.position.add(frontVector.multiplyScalar(speed))
     if (keys.current['KeyS']) camera.position.add(frontVector.multiplyScalar(-speed))
     if (keys.current['KeyA']) camera.position.add(sideVector.multiplyScalar(-speed))
     if (keys.current['KeyD']) camera.position.add(sideVector.multiplyScalar(speed))
 
-    // Check boundaries and revert if out of bounds
     if (Math.abs(camera.position.x) > BOUNDARY_SIZE || 
-        Math.abs(camera.position.z) > BOUNDARY_SIZE ||
-        Math.abs(camera.position.y) > BOUNDARY_SIZE) {
+        Math.abs(camera.position.z) > BOUNDARY_SIZE) {
+      camera.position.copy(previousPosition)
+    }
+
+    const cameraBox = new THREE.Box3().setFromCenterAndSize(
+      camera.position,
+      new THREE.Vector3(2, 4, 2)
+    )
+
+    let hasCollision = false
+    scene.traverse((object) => {
+      if (object.userData.collidable) {
+        const objectBox = new THREE.Box3().setFromObject(object)
+        if (cameraBox.intersectsBox(objectBox)) {
+          hasCollision = true
+        }
+      }
+    })
+
+    if (hasCollision) {
       camera.position.copy(previousPosition)
     }
   })
@@ -112,14 +174,19 @@ export default function Scene() {
       height: '100vh', 
       backgroundColor: '#111'
     }}>
-      <Canvas shadows camera={{ position: [0, 0.5, 10] }}>
-        <Skybox />
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff9f00" />
-        <Model />
-        <PointerLockControls />
-        <FPSControls />
+      <Canvas shadows camera={{ 
+        position: [-50, 2, -50],
+        fov: 75
+      }}>
+        <group>
+          <Skybox />
+          <ambientLight intensity={0.3} />
+          <pointLight position={[10, 10, 10]} intensity={1.5} />
+          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff9f00" />
+          <Model />
+          <PointerLockControls />
+          <FPSControls />
+        </group>
       </Canvas>
     </div>
   )
