@@ -120,8 +120,8 @@ function FPSControls() {
     velocity.current -= GRAVITY * 0.016
     camera.position.y += velocity.current
 
-    if (camera.position.y <= 0.5) {
-      camera.position.y = 0.5
+    if (camera.position.y <= -40) {
+      camera.position.y = -40
       velocity.current = 0
       isGrounded.current = true
     }
@@ -146,7 +146,7 @@ function FPSControls() {
 
     const cameraBox = new THREE.Box3().setFromCenterAndSize(
       camera.position,
-      new THREE.Vector3(2, 4, 2)
+      new THREE.Vector3(0.05, 0.1, 0.05)
     )
 
     let hasCollision = false
@@ -175,8 +175,8 @@ export default function Scene() {
       backgroundColor: '#111'
     }}>
       <Canvas shadows camera={{ 
-        position: [-50, 2, -50],
-        fov: 75
+        position: [-50, -25, -50],
+        fov: 100
       }}>
         <group>
           <Skybox />
