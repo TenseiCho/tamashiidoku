@@ -30,3 +30,7 @@ Builds the app for production to the `build` folder.
 
 - Skybox: "Quarry" (https://skfb.ly/oJSGr) by AVZ is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 - Fumo: "東方 Project - V2 Reimu Hakurei Fumo (3D scan)" (https://skfb.ly/oqJsH) by Renafox is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+
+## License
+
+This project is licensed under the Creative Commons Attribution 4.0 International License - see the [LICENSE](LICENSE) file for details.
